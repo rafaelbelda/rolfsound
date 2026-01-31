@@ -21,11 +21,17 @@ def _get_default_config():
             "output_dir": "recordings",
             "stop_seconds": 5,
             "min_threshold": 0.001,
-            "max_threshold": 0.1,   
+            "max_threshold": 0.1,
             "threshold": 0.015,
             "trigger_duration": 0.3,
-            "enconder_step": 0.005, # KY-040 encoder step
-            "files":{
+            "enconder_step": 0.005,
+            "voice_detection": {
+                "enabled": True,
+                "voice_ratio_threshold": 0.32,        # ← % mínima de energia na banda de voz
+                "min_voice_freq": 380,
+                "max_voice_freq": 2500,
+            },
+            "files": {
                 "delete_old_files": False,
                 "days_to_keep": 90,
                 "max_file_size_gb": 10,
@@ -71,8 +77,8 @@ def load() -> None:
         _config = _deep_merge(default_config, file_config)
     else:
         _config = deepcopy(default_config)
-        # Don't auto-save in Docker - env vars are the source of truth
-
+        save()
+        
 def reload() -> None:
     load()
 

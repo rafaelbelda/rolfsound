@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 
 import sounddevice as sd
 
-from src.recorder import Recorder
+from src.recorder.recorder_script import Recorder
 from src import config
 from src.utils import get_version
 
@@ -67,8 +67,9 @@ def main():
     logger = setup_logging()
     logger.info(f"=== rolfsound {get_version()} ===")
 
-    time.sleep(1)
+    time.sleep(3)
 
+    # TODOs:
     # update from git
     # delete old recordings (>90 days) if enabled
     # check size of "recordings" folder and warn if too large
