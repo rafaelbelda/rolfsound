@@ -6,7 +6,6 @@ from scipy.io.wavfile import write as wav_write
 
 from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, THRESHOLD
 from src import config
-from src.recorder.voice_detection import VoiceDetector
 
 
 # =========================
@@ -16,12 +15,6 @@ from src.recorder.voice_detection import VoiceDetector
 TRIGGER_DURATION = config.get("recorder")["trigger_duration"]
 SILENCE_SECONDS = config.get("recorder")["stop_seconds"]
 OUTPUT_DIR = config.get("recorder")["output_dir"]
-
-# Detecção de voz
-VOICE_DETECTION_ENABLED = config.get("recorder.voice_detection.enabled", default=False)
-VOICE_RATIO_THRESHOLD = config.get("recorder.voice_detection.voice_ratio_threshold", default=0.5)
-MIN_VOICE_FREQ = config.get("recorder.voice_detection.min_voice_freq", default=300)
-MAX_VOICE_FREQ = config.get("recorder.voice_detection.max_voice_freq", default=3400)
 
 # =========================
 # Utilidades
@@ -58,32 +51,11 @@ class Recorder(Monitor):
         self.trigger_samples = 0
         self.min_trigger_samples = int(TRIGGER_DURATION * SAMPLE_RATE)
 
-        self.voice_detection_enabled = VOICE_DETECTION_ENABLED
-        if self.voice_detection_enabled:
-            self.voice_detector = VoiceDetector(
-                sample_rate=SAMPLE_RATE,
-                min_voice_freq=MIN_VOICE_FREQ,
-                max_voice_freq=MAX_VOICE_FREQ,
-                voice_ratio_threshold=VOICE_RATIO_THRESHOLD
-            )
-            logger.info(
-                f"Detecção de voz ativada "
-                f"(banda: {MIN_VOICE_FREQ}-{MAX_VOICE_FREQ}Hz, "
-                f"threshold: {VOICE_RATIO_THRESHOLD:.1%})"
-            )
-        else:
-            self.voice_detector = None
-            logger.info("Detecção de voz desativada")
-
         ensure_output_dir()
 
     def handle_block(self, block: np.ndarray):
         threshold = self.encoder.get_threshold() if self.encoder else THRESHOLD
         level = rms_level(block)
-
-        has_voice = True  # Default: sempre grava
-        if self.voice_detection_enabled and self.voice_detector:
-            has_voice = self.voice_detector.has_voice(block)
 
         if self.recording:
             self.recorded_blocks.append(block)
@@ -100,7 +72,7 @@ class Recorder(Monitor):
             if len(self.prebuffer) > self.prebuffer_size:
                 self.prebuffer.pop(0)
 
-            if level >= threshold and has_voice:
+            if level >= threshold:
                 self.trigger_samples += len(block)
                 if self.trigger_samples >= self.min_trigger_samples:
                     self.start_recording()
@@ -128,7 +100,7 @@ class Recorder(Monitor):
                 self.recording = False
                 self.recorded_blocks.clear()
                 return False
-            
+
             return True
         except Exception as e:
             self.logger.error(f"Erro ao verificar espaço: {e}")
@@ -138,10 +110,10 @@ class Recorder(Monitor):
         if not self.recorded_blocks:
             self.recording = False
             return
-        
+
         if not self.should_save():
             return
-        
+
         audio = np.concatenate(self.recorded_blocks)
         pcm = float_to_int16(audio)
 

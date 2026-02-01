@@ -1,0 +1,35 @@
+{
+    "device_name": null,
+    "monitor": {
+        "channel_index": 1,
+        "sample_rate": 44100,
+        "block_size": 1024
+    },
+    "google_drive": {
+        "credentials_file": "credentials.json",
+        "token_file": "token.json",
+        "folder_id": ""
+    },
+    "recorder": {
+        "output_dir": "recordings",
+        "stop_seconds": 5,
+        "min_threshold": 0.001,
+        "max_threshold": 0.1,
+        "threshold": 0.0020,
+        "trigger_duration": 0.5,
+        "enconder_step": 0.005,
+        "voice_detection": {
+            "enabled": true,
+            "voice_ratio_threshold": 0.32,
+            "min_voice_freq": 380,
+            "max_voice_freq": 2500
+        },
+        "files": {
+            "delete_old_files": false,
+            "days_to_keep": 90,
+            "max_file_size_gb": 10,
+            "upload_after_record": true,
+            "delete_after_upload": false
+        }
+    }
+}
