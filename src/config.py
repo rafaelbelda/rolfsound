@@ -9,7 +9,7 @@ def _get_default_config():
         "device_name": None, # Device name (USB Interface) or index for audio input
         "monitor": {
             "channel_index": 1,
-            "sample_rate": 44100,
+            "sample_rate": 48000,
             "block_size": 1024,
         },
         "google_drive": {
