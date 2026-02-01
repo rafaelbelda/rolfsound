@@ -26,6 +26,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# configs
+config.json
+*.json
+
 # IDE
 .vscode/
 .idea/

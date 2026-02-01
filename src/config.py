@@ -46,7 +46,7 @@ def _get_default_config():
 from src.utils import get_root_path
 
 _config: dict | None = None
-_config_path = get_root_path().parent / "config.json"
+_config_path = get_root_path() / "config.json"
 
 # ---------- helpers ----------
 
