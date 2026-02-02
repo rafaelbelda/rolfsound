@@ -1,4 +1,5 @@
 import queue
+from time import time
 
 import numpy as np
 import sounddevice as sd
@@ -15,6 +16,13 @@ except ImportError:
     from src.hardware.windows_encoder_stub import EncoderControl
     ENCODER_AVAILABLE = False
 
+
+SESSION_STARTED_AT = None
+
+def get_session_uptime() -> float: # in seconds
+    if SESSION_STARTED_AT is None:
+        return 0.0
+    return time() - SESSION_STARTED_AT
 
 # =========================
 # Configuração
@@ -84,6 +92,9 @@ class Monitor:
                 callback=self.audio_callback,
             ):
                 self.logger.info("Monitorando áudio... Pressione Ctrl+C para sair.")
+
+                global SESSION_STARTED_AT
+                SESSION_STARTED_AT = time()
 
                 while True:
                     block = self.audio_queue.get()

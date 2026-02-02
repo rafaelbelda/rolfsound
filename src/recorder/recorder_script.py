@@ -4,10 +4,9 @@ from datetime import datetime
 import numpy as np
 from scipy.io.wavfile import write as wav_write
 
-from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, THRESHOLD
+from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, THRESHOLD, get_session_uptime
 from src import config
 from src.utils import send_ntfy_notification
-
 
 # =========================
 # Configuração
@@ -81,6 +80,13 @@ class Recorder(Monitor):
                 self.trigger_samples = 0
 
     def start_recording(self):
+
+        if get_session_uptime() < 3:
+            self.logger.debug("Ignorando gatilho (sessão muito recente)")
+            self.prebuffer.clear()
+            self.trigger_samples = 0
+            return
+
         self.recording = True
         self.recorded_blocks = list(self.prebuffer)
         self.prebuffer.clear()
