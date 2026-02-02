@@ -6,6 +6,7 @@ from scipy.io.wavfile import write as wav_write
 
 from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, THRESHOLD
 from src import config
+from src.utils import send_ntfy_notification
 
 
 # =========================
@@ -122,6 +123,7 @@ class Recorder(Monitor):
 
         duration = len(audio) / SAMPLE_RATE
         self.logger.info(f"Gravado: {filename} ({duration:.1f}s)")
+        send_ntfy_notification(f"Gravado: {filename} ({duration:.1f}s)", tags=["recording"])
 
         self.recording = False
         self.recorded_blocks.clear()
