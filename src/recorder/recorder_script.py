@@ -129,7 +129,7 @@ class Recorder(Monitor):
 
         duration = len(audio) / SAMPLE_RATE
         self.logger.info(f"Gravado: {filename} ({duration:.1f}s)")
-        send_ntfy_notification(f"Gravado: {filename} ({duration:.1f}s)", tags=["recording"])
+        send_ntfy_notification(f"Gravado: {filename} ({duration:.1f}s)", tags=["studio_microphone"])
 
         self.recording = False
         self.recorded_blocks.clear()
