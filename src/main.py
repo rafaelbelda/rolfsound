@@ -1,16 +1,18 @@
+import sys
 import time
 import logging
 from logging.handlers import RotatingFileHandler
 
 import sounddevice as sd
 
-from src.recorder.recorder_script import Recorder
 from src import config
-from src.utils import get_version
 
 config.load()
 
-DEVICE_NAME = config.get("device_name") or None
+from src.recorder.rec import Recorder
+from src.utils import get_version
+
+DEVICE_NAME = config.get("interface_name") or None
 
 # =========================
 # Utilidades
@@ -18,33 +20,35 @@ DEVICE_NAME = config.get("device_name") or None
 
 def setup_logging():
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter(
-        '%(asctime)s | %(levelname)-8s | %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+        formatter = logging.Formatter(
+            '%(asctime)s | %(levelname)-8s | %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
 
-    file_handler = RotatingFileHandler(
-        'latest.log',
-        maxBytes=5 * 1024 * 1024,
-        backupCount=2,
-        encoding='utf-8'
-    )
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)
+        file_handler = RotatingFileHandler(
+            'latest.log',
+            maxBytes=5 * 1024 * 1024,
+            backupCount=2,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    console_handler.setFormatter(logging.Formatter('%(levelname)-8s | %(message)s'))
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(logging.Formatter('%(levelname)-8s | %(message)s'))
 
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
 
     return logger
-
+    
 def find_input_device(name_hint):
     if name_hint is None:
+        # use default input device
         return None
 
     if isinstance(name_hint, int):
@@ -59,14 +63,11 @@ def find_input_device(name_hint):
 
     raise RuntimeError("Dispositivo não encontrado")
 
-# =========================
-# Entry point
-# =========================
-
 def main():
     logger = setup_logging()
     logger.info(f"=== rolfsound {get_version()} ===")
 
+    logger.info("Aguardando estabilização do sistema de áudio... (3s)")
     time.sleep(3)
 
     # TODOs:
@@ -74,17 +75,47 @@ def main():
     # delete old recordings (>90 days) if enabled
     # check size of "recordings" folder and warn if too large
     # finish setup google drive uploader/authentication
-
     # add logic to detect pendrive and transfer files from "recordings" to pendrive. Then delete local files after transfer.
+    # enable local download by exposing a python http server serving the "recordings" folder
+    # add proper shutdown handling (SIGTERM, SIGINT) with physical button
+
+    # option 1:
+        # long-press enconder to switch "screen modes".
+        # screen modes:
+            # normal: show status, uptime, recording status
+            # config: show current config values, allow changing with encoder (left, right and click to select, edit; click again to save)
+            # info: show system info (CPU load, memory, disk space, network status)
+
+    # option 2:
+        # long-press encoder to save current "threshold" as default in config file
+        # normal push button for "screen modes".
 
     try:
         device_index = find_input_device(DEVICE_NAME)
     except Exception as e:
-        logger.error(e)
-        return
+        logger.error(f"Erro ao encontrar dispositivo de entrada: {e}")
+        sys.exit(1)
 
     recorder = Recorder(logger)
-    recorder.run(device_index)
+
+    try:
+        recorder.run(device_index)
+    except Exception as e:
+        logger.error(f"Erro fatal: {e}", exc_info=True)
+        sys.exit(1)
+    
+    finally:
+        try:
+            if recorder.encoder:
+                recorder.encoder.cleanup()
+            elif recorder.switch_available:
+                recorder.manual_switch.GPIO.remove_event_detect(recorder.manual_switch.pin)
+                recorder.manual_switch.GPIO.cleanup()
+        except Exception:
+            logger.exception("Erro ao limpar GPIOs do dispositivo.")
+            sys.exit(1)
+            
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

@@ -1,21 +1,34 @@
 import json
-import os
 from copy import deepcopy
+import logging
+
+from src.utils import get_device_id
+
+logger = logging.getLogger(__name__)
 
 # ---------- defaults ----------
 def _get_default_config():
 
     return {
-        "device_name": None, # Device name (USB Interface) or index for audio input
+        "interface_name": None, # Device name (USB Interface) or index for audio input
+        "device_id": get_device_id(),
+        "debug_mode": False,
+        "autoupdate": {
+            "enabled": True,
+            "check_interval_hours": 24,
+        },
         "monitor": {
+            "auto_record": False,
+            "monitor_all_channels": True,
             "channel_index": 1,
             "sample_rate": 48000,
             "block_size": 1024,
         },
-        "google_drive": {
-            "credentials_file": "credentials.json",
-            "token_file": "token.json",
-            "folder_id": "",
+        "ntfy": {
+                "enabled": True,
+                "topic": "rolfsound_"+get_device_id(),
+                "on_auto_record_stop": True,
+                "on_uptade": True
         },
         "recorder": {
             "output_dir": "recordings",
@@ -23,21 +36,15 @@ def _get_default_config():
             "min_threshold": 0.001,
             "max_threshold": 0.1,
             "threshold": 0.015,
-            "trigger_duration": 0.3,
-            "enconder_step": 0.005,
-            "voice_detection": {
-                "enabled": True,
-                "voice_ratio_threshold": 0.32,        # ← % mínima de energia na banda de voz
-                "min_voice_freq": 380,
-                "max_voice_freq": 2500,
-            },
+            "trigger_duration": 0.5,
+            "encoder_step": 0.005,
             "files": {
                 "delete_old_files": False,
                 "days_to_keep": 90,
                 "max_file_size_gb": 10,
                 "upload_after_record": True,
                 "delete_after_upload": False,
-            },
+            }
         }
     }
 
@@ -105,7 +112,12 @@ def get(key: str | None = None, default=None):
 
     for part in parts:
         if not isinstance(value, dict) or part not in value:
-            return default
+            # try to find missing key in defaults
+            default_config = _get_default_config()
+            default_value = default_config.get(part, default)
+            logger.warning(f"Key '{key}' not found in config.json. Returning default value: {default_value}")
+            return default_value
+        
         value = value[part]
 
     return value
