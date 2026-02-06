@@ -4,7 +4,7 @@ from time import time
 import numpy as np
 import sounddevice as sd
 
-from src import config
+from src.settings import config
 
 try:
     from src.hardware.enconder_KY_040 import EncoderControl
@@ -149,7 +149,6 @@ class Monitor:
                             self.logger.debug(msg)
 
         except KeyboardInterrupt:
-            print()
             self.logger.info("Encerrando monitor")
 
         except Exception as e:

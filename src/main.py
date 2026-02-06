@@ -8,7 +8,7 @@ import sounddevice as sd
 
 from src.hardware import gpio_manager
 import src.hardware.led_recording as led_recording
-from src import config
+from src.settings import config
 
 config.load()
 
@@ -16,6 +16,7 @@ from src.recorder.rec import Recorder
 from src.utils import get_version
 
 DEVICE_NAME = config.get("general")["interface_name"] or None
+CHECK_UPDATE = config.get("general")["check_update_on_start"] or False
 
 # =========================
 # Utilidades
@@ -68,6 +69,10 @@ def find_input_device(name_hint):
 
 def main():
     logger = setup_logging()
+
+    # update (later)
+    if not CHECK_UPDATE:
+        logger.info("O update automático está desabilitado. Habilite em config.json")
 
     # initialize GPIO once for entire app
     try:

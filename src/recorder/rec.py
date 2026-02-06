@@ -8,8 +8,8 @@ from scipy.io.wavfile import write as wav_write
 import src.hardware.led_recording as led_rec
 
 from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, get_session_uptime
-from src import config
-from src.utils import send_ntfy_notification
+from src.settings import config
+from src.tools.ntfy import notify
 
 try:
     from src.hardware.toggle_switch import ManualRecordSwitch, GPIO_PIN as MANUAL_SWITCH_PIN
@@ -20,11 +20,11 @@ except ImportError:
 # =========================
 # Configuração
 # =========================
+OUTPUT_DIR = config.get("recorder")["output_dir"]
 
-AUTO_RECORD_DEFAULT = config.get("monitor")["auto_record"]
+AUTO_RECORD_DEFAULT = config.get("recorder")["auto_record"]
 TRIGGER_DURATION = config.get("recorder")["trigger_duration"]
 SILENCE_SECONDS = config.get("recorder")["stop_seconds"]
-OUTPUT_DIR = config.get("recorder")["output_dir"]
 
 THRESHOLD = config.get("recorder")["threshold"]
 MIN_THRESHOLD = config.get("recorder")["min_threshold"]
@@ -56,8 +56,11 @@ class Recorder(Monitor):
 
         # --- recorder state ---
         self.auto_record = AUTO_RECORD_DEFAULT
-        self.manual_record = False
+        self.manual_recording = False
         self.recording = False
+
+        self.last_filename = None
+        self.last_duration = 0
 
         # --- threshold ---
         self.threshold = THRESHOLD
@@ -107,7 +110,11 @@ class Recorder(Monitor):
     def _on_button_press(self):
         """Long press ou botão curto do encoder para alternar auto record"""
         self.auto_record = not self.auto_record
+
+        config.set("monitor.auto_record", self.auto_record)
+        config.save()
         self.logger.info(f"Auto Record {'ativado' if self.auto_record else 'desativado'}")
+
 
     def _on_encoder_long_press(self):
         config.set("recorder.threshold", self.threshold)
@@ -124,7 +131,7 @@ class Recorder(Monitor):
         if not self.manual_switch:
             return
 
-        self.manual_record = state
+        self.manual_recording = state
         if state:
             if not self.recording:
                 self.logger.info("Gravação manual iniciada")
@@ -134,6 +141,12 @@ class Recorder(Monitor):
                 self.logger.info("Gravação manual encerrada")
                 self.stop_and_save()
 
+                if self.last_filename:
+                    notify(
+                        f"Gravado: {self.last_filename} ({self.last_duration:.1f}s)",
+                        tags=["studio_microphone"],
+                        fired_by="on_auto_record_stop"
+                    )
     # =========================
     # Audio handling
     # =========================
@@ -144,7 +157,7 @@ class Recorder(Monitor):
         self._last_rms = level
         
         # prioridade: manual record
-        if self.manual_record:
+        if self.manual_recording:
             if self.recording:
                 self.recorded_blocks.append(block)
             return
@@ -200,7 +213,7 @@ class Recorder(Monitor):
         led_rec.stop_blinking()
 
         if not self.recorded_blocks:
-            self.logger.warning("Nenhum dado gravado para salvar.")
+            self.logger.error("Nenhum dado gravado para salvar.")
             return
 
         if not self.should_save():
@@ -217,12 +230,9 @@ class Recorder(Monitor):
         self.silence_samples = 0
 
         duration = len(audio) / SAMPLE_RATE
-        self.logger.info(f"Gravado: {filename} ({duration:.1f}s)")
-
-        send_ntfy_notification(
-            f"Gravado: {filename} ({duration:.1f}s)",
-            tags=["studio_microphone"],
-        )
+        self.last_filename = filename
+        self.last_duration = duration
+        self.logger.info(f"Gravado: {filename} ({duration:.1f}s)")  
 
     # =========================
     # Check disk space

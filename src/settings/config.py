@@ -9,43 +9,43 @@ logger = logging.getLogger(__name__)
 # ---------- defaults ----------
 def _get_default_config():
 
+# later: add cloud capability
+    #"upload_after_recording": True,
+    #"delete_after_upload": False,
+
     return {
         "general": {
         "interface_name": None, # Device name (USB Interface) or index for audio input
         "device_id": get_device_id(),
+        "check_update_on_start": True,
         "debug_mode": False,
-        "autoupdate": {
+        "run_time_minute": 0
+        },
+        "ntfy": {
             "enabled": True,
-            "check_interval_hours": 24,
-            },
+            "on_auto_record_stop": True,
+            "on_uptade": True,
+            "on_out_of_disk": True
         },
         "monitor": {
-            "auto_record": False,
             "monitor_all_channels": True,
             "channel_index": 1,
             "sample_rate": 48000,
-            "block_size": 1024,
-        },
-        "ntfy": {
-                "enabled": True,
-                "topic": "rolfsound_"+get_device_id(),
-                "on_auto_record_stop": True,
-                "on_uptade": True
+            "block_size": 1024
         },
         "recorder": {
+            "auto_record": True,
             "output_dir": "recordings",
-            "stop_seconds": 5,
+            "stop_seconds": 3.5,
             "min_threshold": 0.001,
             "max_threshold": 0.1,
-            "threshold": 0.015,
+            "threshold": 0.05,
             "trigger_duration": 0.5,
-            "encoder_step": 0.005,
+            "encoder_step": 0.001,
             "files": {
                 "delete_old_files": False,
                 "days_to_keep": 90,
-                "max_file_size_gb": 10,
-                "upload_after_record": True,
-                "delete_after_upload": False,
+                "max_file_size_gb": 12
             }
         }
     }

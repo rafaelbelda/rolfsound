@@ -10,7 +10,7 @@ SW_PIN  = 20
 
 
 class EncoderControl:
-    def __init__(self, logger=None, poll_interval=0.003):
+    def __init__(self, logger=None, poll_interval=0.01):
         self.logger = logger or logging.getLogger(__name__)
 
         self.clk_pin = CLK_PIN

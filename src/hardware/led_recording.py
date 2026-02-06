@@ -15,17 +15,11 @@ _blink_thread = None
 def _blink_loop():
     while not _stop_event.is_set():
          GPIO.output(LED_PIN, GPIO.HIGH) # ON
-         time.sleep(INTERVAL_SECONDS_SHORT)
-         GPIO.output(LED_PIN, GPIO.LOW) # OFF
- 
-         time.sleep(INTERVAL_SECONDS_SHORT)
-
-         GPIO.output(LED_PIN, GPIO.HIGH) # ON
-         time.sleep(INTERVAL_SECONDS_SHORT)
+         time.sleep(INTERVAL_SECONDS_LONG)
          GPIO.output(LED_PIN, GPIO.LOW) # OFF
  
          #time.sleep(INTERVAL_SECONDS)
-         time.sleep(INTERVAL_SECONDS_LONG)
+         #time.sleep(INTERVAL_SECONDS_LONG)
 
 
 def start_blinking():
