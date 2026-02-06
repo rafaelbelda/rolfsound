@@ -15,13 +15,10 @@ except ImportError:
     ENCODER_AVAILABLE = False
 
 
-
-
 def get_session_uptime() -> float:  # seconds
     if SESSION_STARTED_AT is None:
         return 0.0
     return time() - SESSION_STARTED_AT
-
 
 # =========================
 # Configuração
@@ -42,7 +39,6 @@ MONITOR_ALL_CHANNELS = config.get("monitor")["monitor_all_channels"]
 
 def rms_level(block: np.ndarray) -> float:
     return np.sqrt(np.mean(block * block))
-
 
 RELATIVE_CHANGE = 0.02  # 2% to display log changes in debug mode false
 

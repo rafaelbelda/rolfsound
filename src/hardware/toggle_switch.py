@@ -1,6 +1,6 @@
 # hardware/toggle_switch.py
 
-GPIO_PIN = 23
+GPIO_PIN = 12
 
 class ManualRecordSwitch:
     """

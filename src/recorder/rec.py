@@ -5,12 +5,14 @@ from datetime import datetime
 import numpy as np
 from scipy.io.wavfile import write as wav_write
 
+import src.hardware.led_recording as led_rec
+
 from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, get_session_uptime
 from src import config
 from src.utils import send_ntfy_notification
 
 try:
-    from hardware.toggle_switch import ManualRecordSwitch, GPIO_PIN as MANUAL_SWITCH_PIN
+    from src.hardware.toggle_switch import ManualRecordSwitch, GPIO_PIN as MANUAL_SWITCH_PIN
     SWITCH_AVAILABLE = True
 except ImportError:
     SWITCH_AVAILABLE = False
@@ -62,7 +64,6 @@ class Recorder(Monitor):
 
         # Encoder callbacks
         if self.encoder:
-            self.encoder.set_threshold(self.threshold)
             self.encoder.on_change(self._on_threshold_change)
             self.encoder.on_button(self._on_button_press)
             self.encoder.on_long_press(self._on_encoder_long_press)
@@ -77,6 +78,8 @@ class Recorder(Monitor):
         else:
             self.manual_switch = None
             self.logger.warning("Toggle switch do auto recorder manual não disponível")
+
+        self.switch_available = SWITCH_AVAILABLE and self.manual_switch is not None
 
         # --- buffers ---
         self.recorded_blocks = []
@@ -99,8 +102,6 @@ class Recorder(Monitor):
 
         if new_threshold != self.threshold:
             self.threshold = new_threshold
-            if self.encoder:
-                self.encoder.set_threshold(self.threshold)
             self.logger.info(f"Threshold ajustado: {self.threshold:.4f}")
 
     def _on_button_press(self):
@@ -120,7 +121,7 @@ class Recorder(Monitor):
     # =========================
 
     def _on_manual_switch(self, state: bool):
-        if not SWITCH_AVAILABLE:
+        if not self.manual_switch:
             return
 
         self.manual_record = state
@@ -191,16 +192,18 @@ class Recorder(Monitor):
         self.silence_samples = 0
         self.trigger_samples = 0
         self.logger.info("Gravação iniciada")
+        led_rec.start_blinking()
 
     def stop_and_save(self):
+
+        self.recording = False
+        led_rec.stop_blinking()
+
         if not self.recorded_blocks:
-            self.recording = False
             self.logger.warning("Nenhum dado gravado para salvar.")
             return
 
         if not self.should_save():
-            if self.recording:
-                self.recording = False
             self.recorded_blocks.clear()
             return
 
@@ -210,7 +213,6 @@ class Recorder(Monitor):
         filename = current_filename()
         wav_write(filename, SAMPLE_RATE, pcm)
 
-        self.recording = False
         self.recorded_blocks.clear()
         self.silence_samples = 0
 
@@ -240,4 +242,5 @@ class Recorder(Monitor):
             return True
         except Exception as e:
             self.logger.error(f"Erro ao verificar espaço: {e}")
-            return True
+            #later: display on oled error
+            return False

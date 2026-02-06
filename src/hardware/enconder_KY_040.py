@@ -6,9 +6,9 @@ Controle de Encoder KY-040 (somente INPUT)
 
 import logging
 
-CLK_PIN = 17  # GPIO17
-DT_PIN = 27  # GPIO27
-SW_PIN = 22  # GPIO22
+CLK_PIN = 23  # GPIO17
+DT_PIN = 24  # GPIO27
+SW_PIN = 25  # GPIO22
 
 def testEncoder():
     try:
@@ -46,6 +46,7 @@ class EncoderControl:
 
         self.on_change_callback = None
         self.on_button_callback = None
+        self.on_long_press_callback = None
 
         self._button_down_time = None
 
@@ -59,13 +60,13 @@ class EncoderControl:
 
             GPIO.add_event_detect(
                 self.sw_pin,
-                GPIO.FALLING,
+                GPIO.BOTH,
                 callback=self._button_callback,
                 bouncetime=300,
             )
 
             self.logger.info(
-                f"Encoder inicializado CLK={clk_pin}, DT={dt_pin}, SW={sw_pin}"
+                f"Encoder inicializado CLK={self.clk_pin}, DT={self.dt_pin}, SW={self.sw_pin}"
             )
 
         except Exception as e:
@@ -125,11 +126,3 @@ class EncoderControl:
         """callback()"""
         self.on_long_press_callback = callback
         self.logger.debug("Callback on_long_press registrado")
-
-
-    def cleanup(self):
-        try:
-            self.GPIO.cleanup()
-            self.logger.info("GPIO limpo")
-        except Exception as e:
-            self.logger.error(f"Erro ao limpar GPIO: {e}")

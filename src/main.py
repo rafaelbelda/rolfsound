@@ -3,8 +3,10 @@ import time
 import logging
 from logging.handlers import RotatingFileHandler
 
+import RPi.GPIO as GPIO
 import sounddevice as sd
 
+import src.hardware.led_recording as led_recording
 from src import config
 
 config.load()
@@ -106,16 +108,13 @@ def main():
     
     finally:
         try:
-            if recorder.encoder:
-                recorder.encoder.cleanup()
-            elif recorder.switch_available:
-                recorder.manual_switch.GPIO.remove_event_detect(recorder.manual_switch.pin)
-                recorder.manual_switch.GPIO.cleanup()
+            led_recording.stop_blinking()
+            if led_recording._blink_thread:
+                led_recording._blink_thread.join()
+        
+            GPIO.cleanup()  # Cleans up everything - encoder, switch, LEDs
         except Exception:
             logger.exception("Erro ao limpar GPIOs do dispositivo.")
-            sys.exit(1)
-            
-        sys.exit(0)
 
 if __name__ == "__main__":
     main()
