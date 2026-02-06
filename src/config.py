@@ -10,12 +10,14 @@ logger = logging.getLogger(__name__)
 def _get_default_config():
 
     return {
+        "general": {
         "interface_name": None, # Device name (USB Interface) or index for audio input
         "device_id": get_device_id(),
         "debug_mode": False,
         "autoupdate": {
             "enabled": True,
             "check_interval_hours": 24,
+            },
         },
         "monitor": {
             "auto_record": False,

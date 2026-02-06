@@ -14,7 +14,7 @@ config.load()
 from src.recorder.rec import Recorder
 from src.utils import get_version
 
-DEVICE_NAME = config.get("interface_name") or None
+DEVICE_NAME = config.get("general")["interface_name"] or None
 
 # =========================
 # Utilidades
