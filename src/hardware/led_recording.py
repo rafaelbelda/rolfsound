@@ -5,7 +5,6 @@ import threading
 LED_PIN = 18
 INTERVAL_SECONDS = 1
 
-GPIO.setmode(GPIO.BCM)
 GPIO.setup(LED_PIN, GPIO.OUT)
 
 _stop_event = threading.Event()

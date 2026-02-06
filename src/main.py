@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler
 import RPi.GPIO as GPIO
 import sounddevice as sd
 
+from src.hardware import gpio_manager
 import src.hardware.led_recording as led_recording
 from src import config
 
@@ -68,12 +69,12 @@ def find_input_device(name_hint):
 def main():
     logger = setup_logging()
 
-    # Clean up any previous GPIO state first
+    # initialize GPIO once for entire app
     try:
-        GPIO.setwarnings(False)
-        GPIO.cleanup()
-    except:
-        pass
+        gpio_manager.init_gpio()
+    except Exception as e:
+        logger.critical(f"Exception while setting up GPIO: {e}")
+        sys.exit(1)
 
     logger.info(f"=== rolfsound {get_version()} ===")
 
@@ -120,7 +121,8 @@ def main():
             if led_recording._blink_thread:
                 led_recording._blink_thread.join()
         
-            GPIO.cleanup()  # Cleans up everything - encoder, switch, LEDs
+            gpio_manager.cleanup_gpio()
+            
         except Exception:
             logger.exception("Erro ao limpar GPIOs do dispositivo.")
 
