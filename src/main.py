@@ -67,6 +67,14 @@ def find_input_device(name_hint):
 
 def main():
     logger = setup_logging()
+
+    # Clean up any previous GPIO state first
+    try:
+        GPIO.setwarnings(False)
+        GPIO.cleanup()
+    except:
+        pass
+
     logger.info(f"=== rolfsound {get_version()} ===")
 
     logger.info("Aguardando estabilização do sistema de áudio... (3s)")
