@@ -6,9 +6,9 @@ Controle de Encoder KY-040 (somente INPUT)
 
 import logging
 
-CLK_PIN = 23  # GPIO17
-DT_PIN = 24  # GPIO27
-SW_PIN = 25  # GPIO22
+CLK_PIN = 18
+DT_PIN = 23
+SW_PIN = 24
 
 def testEncoder():
     try:

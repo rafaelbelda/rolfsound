@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import threading
 
-LED_PIN = 18
+LED_PIN = 20
 INTERVAL_SECONDS = 1
 
 _stop_event = threading.Event()
