@@ -3,12 +3,8 @@ import logging
 from src import __version__, __device_id__
 import requests
 
-from src import config
 
 logger = logging.getLogger(__name__)
-
-NTFY_ENABLED = config.get("ntfy")["enabled"]
-NTFY_TOPIC = config.get("ntfy")["topic"]
 
 def get_root_path() -> Path:
     return Path(__file__).parent
@@ -29,7 +25,12 @@ def test_internet_connection(timeout: float = 3.0) -> bool:
         logger.error(f"EXCEPTION: test_internet_connection: {e}")
         return False
 
-def send_ntfy_notification(msg: str, ntfy_topic: str = NTFY_TOPIC, tags: list = None):
+def send_ntfy_notification(msg: str, tags: list = None):
+
+    from src import config
+
+    NTFY_ENABLED = config.get("ntfy")["enabled"]
+    ntfy_topic = config.get("ntfy")["topic"]
 
     if not NTFY_ENABLED:
         logger.debug("ntfy notifications are disabled in config.")
