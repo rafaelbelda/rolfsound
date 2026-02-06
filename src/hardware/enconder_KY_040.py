@@ -1,100 +1,76 @@
-"""
-Controle de Encoder KY-040 (somente INPUT)
-- Gira = emite delta (+1 / -1)
-- Botão = callback simples
-"""
-
 import logging
+import threading
+import time
+
+import RPi.GPIO as GPIO
 
 CLK_PIN = 12
-DT_PIN = 16
-SW_PIN = 20
-
-def testEncoder():
-    try:
-        import RPi.GPIO as GPIO
-    except ImportError:
-        raise ImportError(
-            "Este módulo só pode ser executado em um Raspberry Pi com RPi.GPIO instalado."
-        )
+DT_PIN  = 16
+SW_PIN  = 20
 
 
 class EncoderControl:
-    """
-    Encoder rotacional como dispositivo de entrada puro
-    NÃO conhece threshold, step ou limites
-    """
-
-    def __init__(self, logger=None):
-        import RPi.GPIO as GPIO
-        self.GPIO = GPIO
-
+    def __init__(self, logger=None, poll_interval=0.003):
         self.logger = logger or logging.getLogger(__name__)
 
         self.clk_pin = CLK_PIN
-        self.dt_pin = DT_PIN
-        self.sw_pin = SW_PIN
+        self.dt_pin  = DT_PIN
+        self.sw_pin  = SW_PIN
+
+        self.poll_interval = poll_interval
 
         GPIO.setup(self.clk_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(self.dt_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(self.sw_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.dt_pin,  GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(self.sw_pin,  GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        self.last_clk_state = GPIO.input(self.clk_pin)
+        self.last_clk = GPIO.input(self.clk_pin)
+        self.last_sw  = GPIO.input(self.sw_pin)
 
         self.on_change_callback = None
         self.on_button_callback = None
         self.on_long_press_callback = None
 
         self._button_down_time = None
+        self._stop_event = threading.Event()
 
-        try:
-            GPIO.add_event_detect(
-                self.clk_pin,
-                GPIO.BOTH,
-                callback=self._encoder_callback,
-                bouncetime=2,
-            )
+        self._thread = threading.Thread(
+            target=self._poll_loop,
+            daemon=True
+        )
+        self._thread.start()
 
-            GPIO.add_event_detect(
-                self.sw_pin,
-                GPIO.BOTH,
-                callback=self._button_callback,
-                bouncetime=300,
-            )
-
-            self.logger.info(
-                f"Encoder inicializado CLK={self.clk_pin}, DT={self.dt_pin}, SW={self.sw_pin}"
-            )
-
-        except Exception as e:
-            self.logger.error(f"Erro ao configurar encoder: {e}")
-            raise
+        self.logger.info(
+            f"Encoder (polling) inicializado CLK={self.clk_pin}, DT={self.dt_pin}, SW={self.sw_pin}"
+        )
 
     # =========================================================
 
-    def _encoder_callback(self, channel):
-        try:
-            clk_state = self.GPIO.input(self.clk_pin)
-            dt_state = self.GPIO.input(self.dt_pin)
+    def _poll_loop(self):
+        while not self._stop_event.is_set():
+            self._poll_encoder()
+            self._poll_button()
+            time.sleep(self.poll_interval)
 
-            if clk_state != self.last_clk_state and clk_state == 1:
-                delta = +1 if dt_state != clk_state else -1
+    def _poll_encoder(self):
+        clk = GPIO.input(self.clk_pin)
 
-                if self.on_change_callback:
-                    self.on_change_callback(delta)
+        if clk != self.last_clk and clk == 1:
+            dt = GPIO.input(self.dt_pin)
+            delta = +1 if dt != clk else -1
 
-            self.last_clk_state = clk_state
+            if self.on_change_callback:
+                self.on_change_callback(delta)
 
-        except Exception as e:
-            self.logger.error(f"Erro no callback do encoder: {e}")
+        self.last_clk = clk
 
-    def _button_callback(self, channel):
-        import time
-        pressed = not self.GPIO.input(self.sw_pin)
+    def _poll_button(self):
+        sw = GPIO.input(self.sw_pin)
+        pressed = (sw == 0)
 
-        if pressed:
+        if pressed and self.last_sw == 1:
             self._button_down_time = time.time()
-        else:
+
+        elif not pressed and self.last_sw == 0:
             if self._button_down_time:
                 duration = time.time() - self._button_down_time
                 self._button_down_time = None
@@ -106,20 +82,21 @@ class EncoderControl:
                     if self.on_button_callback:
                         self.on_button_callback()
 
+        self.last_sw = sw
 
     # =========================================================
 
     def on_change(self, callback):
-        """callback(delta: int)"""
         self.on_change_callback = callback
         self.logger.debug("Callback on_change registrado")
 
     def on_button(self, callback):
-        """callback()"""
         self.on_button_callback = callback
         self.logger.debug("Callback on_button registrado")
 
     def on_long_press(self, callback):
-        """callback()"""
         self.on_long_press_callback = callback
         self.logger.debug("Callback on_long_press registrado")
+
+    def close(self):
+        self._stop_event.set()
