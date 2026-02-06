@@ -100,6 +100,10 @@ class Recorder(Monitor):
     # =========================
 
     def _on_threshold_change(self, delta: int):
+        if not self.auto_record:
+            self.logger.debug("Auto Record está desativado. Mantendo threshold sem alteração.")
+            return # dont change if autorec is disabled
+
         new_threshold = self.threshold + delta * THRESHOLD_STEP
         new_threshold = max(MIN_THRESHOLD, min(MAX_THRESHOLD, new_threshold))
 

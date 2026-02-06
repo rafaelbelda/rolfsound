@@ -122,6 +122,10 @@ def main():
     
     finally:
         try:
+            if recorder.recording:
+                logger.warning("Stopping while recording in progress, ending recording...")
+                recorder.stop_and_save()
+
             led_recording.stop_blinking()
             if led_recording._blink_thread:
                 led_recording._blink_thread.join()
