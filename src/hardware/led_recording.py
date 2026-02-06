@@ -17,6 +17,7 @@ def _blink_loop():
         GPIO.output(LED_PIN, GPIO.HIGH) # ON
         time.sleep(INTERVAL_SECONDS_SHORT)
         GPIO.output(LED_PIN, GPIO.LOW) # OFF
+        time.sleep(INTERVAL_SECONDS_SHORT)
  
         #time.sleep(INTERVAL_SECONDS)
         #time.sleep(INTERVAL_SECONDS_LONG)
