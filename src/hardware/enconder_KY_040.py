@@ -18,6 +18,7 @@ def testEncoder():
             "Este módulo só pode ser executado em um Raspberry Pi com RPi.GPIO instalado."
         )
 
+
 class EncoderControl:
     """
     Encoder rotacional como dispositivo de entrada puro
@@ -29,8 +30,6 @@ class EncoderControl:
         self.GPIO = GPIO
 
         self.logger = logger or logging.getLogger(__name__)
-
-        GPIO.setwarnings(False)
 
         self.clk_pin = CLK_PIN
         self.dt_pin = DT_PIN
