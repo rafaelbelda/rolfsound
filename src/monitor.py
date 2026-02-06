@@ -7,8 +7,6 @@ import sounddevice as sd
 from src import config
 
 try:
-    from src.hardware.enconder_KY_040 import testEncoder
-    testEncoder()
     from src.hardware.enconder_KY_040 import EncoderControl
     ENCODER_AVAILABLE = True
 except ImportError:
@@ -40,14 +38,18 @@ MONITOR_ALL_CHANNELS = config.get("monitor")["monitor_all_channels"]
 def rms_level(block: np.ndarray) -> float:
     return np.sqrt(np.mean(block * block))
 
-RELATIVE_CHANGE = 0.02  # 2% to display log changes in debug mode false
+RELATIVE_CHANGE = 0.05  # 5% to display log changes in debug mode false
 
-def changed(prev, curr, rel=RELATIVE_CHANGE) -> bool:
+def changed(prev, curr, rel=RELATIVE_CHANGE, abs_min=1e-3) -> bool:
     if prev is None:
         return True
     if isinstance(curr, bool):
         return prev != curr
-    scale = max(abs(prev), 1e-12)
+        # ignore tiny fluctuations near zero
+    if abs(prev) < abs_min and abs(curr) < abs_min:
+        return False
+
+    scale = max(abs(prev), abs_min)
     return abs(curr - prev) >= scale * rel
 
 # =========================

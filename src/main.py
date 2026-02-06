@@ -78,8 +78,8 @@ def main():
 
     logger.info(f"=== rolfsound {get_version()} ===")
 
-    logger.info("Aguardando estabilização do sistema de áudio... (3s)")
-    time.sleep(3)
+    #logger.info("Aguardando estabilização do sistema de áudio...")
+    #time.sleep(0.5)
 
     # TODOs:
     # update from git
