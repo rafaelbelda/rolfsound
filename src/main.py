@@ -81,8 +81,6 @@ def main():
         logger.critical(f"Exception while setting up GPIO: {e}")
         sys.exit(1)
 
-    led_recording.on()
-
     logger.info(f"=== rolfsound {get_version()} ===")
 
     #logger.info("Aguardando estabilização do sistema de áudio...")
@@ -115,12 +113,9 @@ def main():
         recorder = Recorder(logger)
         recorder.run(device_index)
 
-        led_recording.off()
-
     except Exception as e:
         logger.error(f"Erro fatal: {e}", exc_info=True)
         sys.exit(1)
-
 
     finally:
         try:
