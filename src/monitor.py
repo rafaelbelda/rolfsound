@@ -127,26 +127,26 @@ class Monitor:
                     # debug: live console update
                     # prod: log only when values change meaningfully
 
-                    if DEBUG_MODE:
-                        print("\r" + msg.ljust(100), end="", flush=True)
-                    else:
-                        fields = {
-                            "recording": recording,
-                            "rms": rms,
-                            "threshold": threshold,
-                            "trigger": trigger_s,
-                            "silence": silence_s,
-                        }
+                    #if DEBUG_MODE:
+                    #    print("\r" + msg.ljust(100), end="", flush=True)
+                    #else:
+                    fields = {
+                        "recording": recording,
+                        "rms": rms,
+                        "threshold": threshold,
+                        "trigger": trigger_s,
+                        "silence": silence_s,
+                    }
 
-                        should_log = False
-                        for k, v in fields.items():
-                            if changed(self._last_logged.get(k), v):
-                                should_log = True
-                                break
+                    should_log = False
+                    for k, v in fields.items():
+                        if changed(self._last_logged.get(k), v):
+                            should_log = True
+                            break
                             
-                        if should_log:
-                            self._last_logged = fields.copy()
-                            self.logger.debug(msg)
+                    if should_log:
+                        self._last_logged = fields.copy()
+                        self.logger.debug(msg)
 
         except KeyboardInterrupt:
             self.logger.info("Encerrando monitor")

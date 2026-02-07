@@ -19,7 +19,7 @@ def _get_default_config():
         "device_id": get_device_id(),
         "check_update_on_start": True,
         "debug_mode": False,
-        "run_time_minute": 0
+        "run_time_minutes": 0
         },
         "ntfy": {
             "enabled": True,
