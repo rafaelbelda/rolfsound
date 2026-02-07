@@ -11,12 +11,17 @@ GPIO.setmode(GPIO.BCM)
 _stop_event = threading.Event()
 _blink_thread = None
 
+def on():
+    GPIO.output(LED_PIN, GPIO.HIGH)
+
+def off():
+    GPIO.output(LED_PIN, GPIO.LOW)
 
 def _blink_loop():
     while not _stop_event.is_set():
-        GPIO.output(LED_PIN, GPIO.HIGH) # ON
+        on() # ON
         time.sleep(INTERVAL_SECONDS_SHORT)
-        GPIO.output(LED_PIN, GPIO.LOW) # OFF
+        off() # OFF
         time.sleep(INTERVAL_SECONDS_SHORT)
  
         #time.sleep(INTERVAL_SECONDS)
@@ -41,4 +46,4 @@ def start_blinking():
 
 def stop_blinking():
     _stop_event.set()
-    GPIO.output(LED_PIN, GPIO.LOW)
+    off()

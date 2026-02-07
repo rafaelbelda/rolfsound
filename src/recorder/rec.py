@@ -7,6 +7,7 @@ from scipy.io.wavfile import write as wav_write
 
 import src.hardware.led_recording as led_rec
 
+from src.recorder.server import TempRecordingServer
 from src.monitor import Monitor, rms_level, SAMPLE_RATE, BLOCK_SIZE, get_session_uptime
 from src.settings import config
 from src.tools.ntfy import notify
@@ -21,6 +22,7 @@ except ImportError:
 # Configuração
 # =========================
 OUTPUT_DIR = config.get("recorder")["output_dir"]
+DEBUG_MODE = config.get("general")["debug_mode"]
 
 AUTO_RECORD_DEFAULT = config.get("recorder")["auto_record"]
 TRIGGER_DURATION = config.get("recorder")["trigger_duration"]
@@ -94,6 +96,25 @@ class Recorder(Monitor):
         self.min_trigger_samples = int(TRIGGER_DURATION * SAMPLE_RATE)
 
         ensure_output_dir()
+
+        # start server
+        self.file_server = None
+        
+        if DEBUG_MODE:
+            self.file_server = TempRecordingServer(self.logger)
+
+    def run(self, device_index):
+        if not DEBUG_MODE:
+            return super().run(device_index)
+
+        try:
+            if self.file_server:
+                self.file_server.start()
+            return super().run(device_index)
+
+        finally:
+            if self.file_server and self.file_server.running:
+                self.file_server.stop()
 
     # =========================
     # Encoder callbacks

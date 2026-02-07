@@ -81,6 +81,8 @@ def main():
         logger.critical(f"Exception while setting up GPIO: {e}")
         sys.exit(1)
 
+    led_recording.on()
+
     logger.info(f"=== rolfsound {get_version()} ===")
 
     #logger.info("Aguardando estabilização do sistema de áudio...")
@@ -92,7 +94,7 @@ def main():
     # check size of "recordings" folder and warn if too large
     # finish setup google drive uploader/authentication
     # add logic to detect pendrive and transfer files from "recordings" to pendrive. Then delete local files after transfer.
-    # enable local download by exposing a python http server serving the "recordings" folder
+    # enable local download by exposing a python http server serving the "recordings" folder (DONE)
     # add proper shutdown handling (SIGTERM, SIGINT) with physical button
 
     # option 1:
@@ -106,23 +108,23 @@ def main():
         # long-press encoder to save current "threshold" as default in config file
         # normal push button for "screen modes".
 
+    recorder = None
+
     try:
         device_index = find_input_device(DEVICE_NAME)
-    except Exception as e:
-        logger.error(f"Erro ao encontrar dispositivo de entrada: {e}")
-        sys.exit(1)
-
-    recorder = Recorder(logger)
-
-    try:
+        recorder = Recorder(logger)
         recorder.run(device_index)
+
+        led_recording.off()
+
     except Exception as e:
         logger.error(f"Erro fatal: {e}", exc_info=True)
         sys.exit(1)
-    
+
+
     finally:
         try:
-            if recorder.recording:
+            if recorder and recorder.recording:
                 logger.warning("Stopping while recording in progress, ending recording...")
                 recorder.stop_and_save()
 
